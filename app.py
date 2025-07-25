@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_from_directory, redirect, url_for
+from flask import Flask, render_template, request, send_file, redirect, url_for
 import os
 import threading
 import webbrowser
@@ -30,9 +30,15 @@ def index():
 def result(zipname):
     return render_template('result.html', zipname=zipname)
 
+
 @app.route('/download/<path:filename>')
 def download_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
+    full_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    if not os.path.exists(full_path):
+        return f"❌ 文件未找到：{full_path}", 404
+
+    return send_file(full_path, as_attachment=True)
 
 def open_browser():
     webbrowser.open_new("http://127.0.0.1:5000")
