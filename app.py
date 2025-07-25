@@ -1,14 +1,23 @@
-from flask import Flask, render_template, request, send_file, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for,send_from_directory, abort
+from werkzeug.utils import safe_join
 import os
+import sys
 import threading
 import webbrowser
 from werkzeug.utils import secure_filename
 from tackle_tool import process_zip
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+# 判断是否是 PyInstaller 打包的可执行文件
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# 真正可用的上传和输出目录
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -33,12 +42,15 @@ def result(zipname):
 
 @app.route('/download/<path:filename>')
 def download_file(filename):
-    full_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-    if not os.path.exists(full_path):
-        return f"❌ 文件未找到：{full_path}", 404
-
-    return send_file(full_path, as_attachment=True)
+    try:
+        full_path = safe_join(app.config['UPLOAD_FOLDER'], filename)
+        if not os.path.exists(full_path):
+            abort(404)
+        directory = os.path.dirname(full_path)
+        file = os.path.basename(full_path)
+        return send_from_directory(directory, file, as_attachment=True)
+    except:
+        abort(404)
 
 def open_browser():
     webbrowser.open_new("http://127.0.0.1:5000")
