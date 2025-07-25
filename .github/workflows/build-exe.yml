@@ -1,4 +1,4 @@
-name: Build EXE for Windows
+name: Build 32-bit EXE for Windows
 
 on:
   push:
@@ -12,10 +12,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Python
+      - name: Setup 32-bit Python 3.7
         uses: actions/setup-python@v4
         with:
           python-version: '3.7'
+          architecture: 'x86'  # ⬅⬅⬅ 强制使用 32 位 Python
 
       - name: Install dependencies
         run: |
@@ -23,7 +24,7 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
-      - name: Build EXE with PyInstaller
+      - name: Build 32-bit EXE with PyInstaller
         run: |
           pyinstaller --noconfirm --onefile app.py --add-data "templates;templates" --add-data "static;static"
 
