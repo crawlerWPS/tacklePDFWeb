@@ -22,15 +22,6 @@ def log(msg):
             print("[警告] 控制台无法显示部分字符。")
     log_lines.append(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {msg}")
 
-# def log(msg):
-#     try:
-#         print(msg)
-#     except UnicodeEncodeError:
-#         # 控制台不支持时 fallback 显示
-#         safe_msg = msg.encode('utf-8', errors='replace').decode(sys.stdout.encoding, errors='replace')
-#         print(safe_msg)
-#     log_lines.append(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {msg}")
-
 def is_valid_pdf(path):
     try:
         with open(path, 'rb') as f:
@@ -141,10 +132,17 @@ def process_zip(zip_path, extract_dir="extracted_pdfs", output_zip="processed_ou
         log(f"[打包完成] 已生成压缩包：{output_zip}")
     except Exception as e:
         log(f"[错误] 打包失败：{e}")
+        
+        
+        
+import re
 
-# if __name__ == "__main__":
-#     if len(sys.argv) < 2:
-#         print("用法：tackle_tool.exe <zip文件路径>")
-#     else:
-#         zip_file_path = sys.argv[1]
-#         process_zip(zip_file_path)
+def custom_secure_filename(filename):
+    """
+    更宽容地保留中文、常用字符，仅移除危险符号和控制字符。
+    """
+    filename = os.path.basename(filename)  # 防止路径注入
+    # 替换非法字符为下划线（只保留中英文、数字、下划线、点号和括号）
+    filename = re.sub(r"[^\u4e00-\u9fa5a-zA-Z0-9_.()（）-]+", "_", filename)
+    # 防止空文件名
+    return filename or "unnamed.zip"

@@ -4,8 +4,8 @@ import os
 import sys
 import threading
 import webbrowser
-from werkzeug.utils import secure_filename
 from tackle_tool import process_zip
+from tackle_tool import custom_secure_filename
 
 app = Flask(__name__)
 # 判断是否是 PyInstaller 打包的可执行文件
@@ -23,7 +23,9 @@ def index():
     if request.method == 'POST':
         zip_file = request.files['zip_file']
         if zip_file and zip_file.filename.endswith('.zip'):
-            filename = secure_filename(zip_file.filename)
+            filename = custom_secure_filename(zip_file.filename)
+            print("--------------------")
+            print(f"上传的文件名: {zip_file.filename}")
             zip_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             zip_file.save(zip_path)
 
