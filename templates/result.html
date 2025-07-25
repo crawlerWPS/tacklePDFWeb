@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>处理完成</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <h2>处理完成</h2>
+  <a href="{{ url_for('download_file', filename=zipname) }}">📦 下载处理后的 ZIP 文件</a><br>
+  <a href="{{ url_for('download_file', filename=zipname.replace('_processed.zip', '.zip_extracted/processing_log.txt')) }}">📄 查看日志</a><br>
+  <a href="/">⏪ 返回首页</a>
+</body>
+</html>
