@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, send_from_directory, redirect, url_for
 import os
+import threading
+import webbrowser
 from werkzeug.utils import secure_filename
 from tackle_tool import process_zip
 
@@ -32,5 +34,9 @@ def result(zipname):
 def download_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
 
+def open_browser():
+    webbrowser.open_new("http://127.0.0.1:5000")
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    threading.Timer(1.0, open_browser).start()
+    app.run()
