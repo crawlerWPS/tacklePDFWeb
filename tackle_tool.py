@@ -30,7 +30,7 @@ def is_valid_pdf(path):
     except:
         return False
 
-def process_pdf(pdf_path, backup_dir):
+def process_pdf(pdf_path):
     filename = os.path.basename(pdf_path)
 
     if not is_valid_pdf(pdf_path):
@@ -44,17 +44,10 @@ def process_pdf(pdf_path, backup_dir):
         log(f"[错误] 无法读取 {filename}，原因：{e}")
         return
 
-    # 创建备份文件
-    os.makedirs(backup_dir, exist_ok=True)
-    backup_path = os.path.join(backup_dir, filename.replace(".pdf", ".bak.pdf"))
-    shutil.copy2(pdf_path, backup_path)
-    log(f"[备份] {filename} 已备份至 backup_pdfs/")
-
     if num_pages <= 1:
         log(f"[保留] {filename} 只有1页，原样保留")
         return
 
-    # 多页 PDF：提取最后一页
     writer = PdfWriter()
     writer.add_page(reader.pages[-1])
     temp_path = pdf_path + ".temp.pdf"
@@ -101,17 +94,12 @@ def process_zip(zip_path, extract_dir="extracted_pdfs", output_zip="processed_ou
         log(f"[错误] 解压失败：{e}")
         return
 
-    # 创建备份目录
-    backup_dir = os.path.join(extract_dir, "backup_pdfs")
-
     # 处理 PDF 文件（跳过备份目录）
     for root, _, files in os.walk(extract_dir):
-        if os.path.abspath(root).startswith(os.path.abspath(backup_dir)):
-            continue
         for file in files:
             if file.lower().endswith(".pdf") and not file.startswith("._"):
                 pdf_path = os.path.join(root, file)
-                process_pdf(pdf_path, backup_dir)
+                process_pdf(pdf_path=pdf_path)
 
     # 写入日志
     log_path = os.path.join(extract_dir, "processing_log.txt")
@@ -119,17 +107,33 @@ def process_zip(zip_path, extract_dir="extracted_pdfs", output_zip="processed_ou
         f.write("\n".join(log_lines))
     log(f"[完成] 日志已保存至：{log_path}")
 
-    # 打包为 zip
+    # 根据 extract_dir 名称，提取原始 ZIP 文件名来定位要打包的子目录
     try:
+        # 提取 "发票20250624" ← 从 "发票20250624.zip_extracted"
+        base_folder_name = os.path.basename(extract_dir)
+        if base_folder_name.endswith(".zip_extracted"):
+            target_folder_name = base_folder_name.replace(".zip_extracted", "")
+        else:
+            log(f"[错误] 解压目录名称不规范：{base_folder_name}")
+            return
+
+        folder_to_zip = os.path.join(extract_dir, target_folder_name)
+
+        if not os.path.isdir(folder_to_zip):
+            log(f"[错误] 未找到要打包的目录：{folder_to_zip}")
+            return
+
         if os.path.exists(output_zip):
             os.remove(output_zip)
+
         with zipfile.ZipFile(output_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            for foldername, subfolders, filenames in os.walk(extract_dir):
+            for foldername, subfolders, filenames in os.walk(folder_to_zip):
                 for filename in filenames:
                     file_path = os.path.join(foldername, filename)
-                    arcname = os.path.relpath(file_path, extract_dir)
+                    arcname = os.path.relpath(file_path, extract_dir)  # 相对整个 extract_dir 保留结构
                     zipf.write(file_path, arcname)
-        log(f"[打包完成] 已生成压缩包：{output_zip}")
+
+        log(f"[打包完成] 仅打包目录：{target_folder_name} → {output_zip}")
     except Exception as e:
         log(f"[错误] 打包失败：{e}")
         
